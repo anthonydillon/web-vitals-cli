@@ -1,5 +1,6 @@
 import { createServer } from 'http';
 import { readFileSync } from 'fs';
+import { parseHistory, globalStats, fmtMs } from './lib.js';
 
 const VANILLA_CSS = 'https://assets.ubuntu.com/v1/vanilla-framework-version-4.19.0.min.css';
 
@@ -18,47 +19,7 @@ function loadHistory(path) {
   catch { return {}; }
 }
 
-function parseHistory(history) {
-  const entries = Object.entries(history).map(([key, runs]) => {
-    const sep = key.indexOf(':');
-    return { strategy: key.slice(0, sep), url: key.slice(sep + 1), runs };
-  });
-  const byStrategy = {};
-  for (const e of entries) {
-    (byStrategy[e.strategy] ??= []).push(e);
-  }
-  for (const pages of Object.values(byStrategy)) {
-    pages.sort((a, b) => (b.runs.at(-1)?.score ?? 0) - (a.runs.at(-1)?.score ?? 0));
-  }
-  return byStrategy;
-}
-
-function globalStats(byStrategy) {
-  const seen = new Map();
-  for (const pages of Object.values(byStrategy)) {
-    for (const { url, runs } of pages) {
-      const s = runs.at(-1)?.score ?? 0;
-      if (!seen.has(url) || seen.get(url) < s) seen.set(url, s);
-    }
-  }
-  const scores = [...seen.values()];
-  const total  = seen.size;
-  const avg    = scores.length ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 0;
-  return {
-    total,
-    avg,
-    good:    scores.filter(s => s >= 90).length,
-    caution: scores.filter(s => s >= 50 && s < 90).length,
-    poor:    scores.filter(s => s < 50).length,
-  };
-}
-
 // ─── HTML fragments ────────────────────────────────────────────────────────
-
-function fmtMs(ms) {
-  if (ms === null || ms === undefined) return '—';
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
-}
 
 function scoreLabel(score) {
   const cls = score >= 90 ? 'positive' : score >= 50 ? 'caution' : 'negative';

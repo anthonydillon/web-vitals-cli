@@ -8,7 +8,8 @@
   },
   "files": [
     "index.js",
-    "server.js"
+    "server.js",
+    "lib.js"
   ],
   "keywords": [
     "web-vitals",
@@ -37,6 +38,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "prepublishOnly": "node --check index.js && node --check server.js"
+    "test": "node --test test/lib.test.js test/cli.test.js",
+    "prepublishOnly": "node --check index.js && node --check server.js && node --check lib.js && npm test"
   }
 }

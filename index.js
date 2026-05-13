@@ -4,10 +4,15 @@ import { readFileSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { startServer } from './server.js';
+import {
+  MAX_ENTRIES_PER_URL,
+  historyKey, getLastEntry, recordEntry,
+  extractLocs, isSitemapUrl,
+  fmtMs, truncate,
+} from './lib.js';
 
 const API_BASE = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
 const DEFAULT_HISTORY_PATH = join(homedir(), '.web-vitals-history.json');
-const MAX_ENTRIES_PER_URL = 50;
 
 const c = {
   reset: '\x1b[0m',
@@ -57,14 +62,6 @@ function categoryLabel(cat) {
   return 'Poor';
 }
 
-function ms(value) {
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}s`;
-  return `${Math.round(value)}ms`;
-}
-
-function truncate(str, max) {
-  return str.length > max ? str.slice(0, max - 1) + '…' : str;
-}
 
 function formatTs(isoString) {
   const d = new Date(isoString);
@@ -83,7 +80,7 @@ function sparkline(scores) {
   return chars.join('') + pad;
 }
 
-// ─── History ───────────────────────────────────────────────────────────────
+// ─── History I/O ──────────────────────────────────────────────────────────
 
 function loadHistory(filePath) {
   try {
@@ -97,42 +94,12 @@ function saveHistory(filePath, history) {
   writeFileSync(filePath, JSON.stringify(history, null, 2), 'utf8');
 }
 
-function historyKey(url, strategy) {
-  return `${strategy}:${url}`;
-}
-
-function getLastEntry(history, url, strategy) {
-  const entries = history[historyKey(url, strategy)];
-  return entries?.[entries.length - 1] ?? null;
-}
-
-function recordEntry(history, result, strategy, ts) {
-  if (result.score === null) return; // don't store failed checks
-  const key = historyKey(result.url, strategy);
-  if (!history[key]) history[key] = [];
-  history[key].push({
-    ts,
-    score: result.score,
-    lcp: result.lcp !== null ? Math.round(result.lcp) : null,
-    cls: result.cls !== null ? parseFloat(result.cls.toFixed(3)) : null,
-    tbt: result.tbt !== null ? Math.round(result.tbt) : null,
-    fcp: result.fcp !== null ? Math.round(result.fcp) : null,
-  });
-  if (history[key].length > MAX_ENTRIES_PER_URL) {
-    history[key] = history[key].slice(-MAX_ENTRIES_PER_URL);
-  }
-}
-
 // ─── Sitemap parsing ───────────────────────────────────────────────────────
 
 async function fetchText(url) {
   const res = await fetch(url, { headers: { 'User-Agent': 'web-vitals-cli/1.0' } });
   if (!res.ok) throw new Error(`Failed to fetch ${url}: HTTP ${res.status}`);
   return res.text();
-}
-
-function extractLocs(xml) {
-  return [...xml.matchAll(/<loc[^>]*>\s*([^<\s]+)\s*<\/loc>/gi)].map(m => m[1]);
 }
 
 async function resolveSitemapUrls(url, visited = new Set()) {
@@ -145,11 +112,6 @@ async function resolveSitemapUrls(url, visited = new Set()) {
     return nested.flat();
   }
   return extractLocs(xml);
-}
-
-function isSitemapUrl(url) {
-  const path = new URL(url).pathname.toLowerCase();
-  return path.endsWith('.xml') || path.includes('sitemap');
 }
 
 // ─── PSI analysis ──────────────────────────────────────────────────────────
@@ -226,7 +188,7 @@ function printSingle(result, history, strategy) {
   for (const { key, label, isCls } of labMetrics) {
     const audit = audits[key];
     if (!audit) continue;
-    const value = isCls ? audit.numericValue.toFixed(3) : ms(audit.numericValue);
+    const value = isCls ? audit.numericValue.toFixed(3) : fmtMs(audit.numericValue);
     const scorePart = audit.score !== null ? ` — ${formatScore(Math.round(audit.score * 100))}` : '';
     console.log(`  ${label.padEnd(36)} ${value}${scorePart}`);
   }
@@ -246,7 +208,7 @@ function printSingle(result, history, strategy) {
     for (const { key, label, isCls } of fieldMetrics) {
       const metric = field.metrics[key];
       if (!metric) continue;
-      const value = isCls ? (metric.percentile / 100).toFixed(3) : ms(metric.percentile);
+      const value = isCls ? (metric.percentile / 100).toFixed(3) : fmtMs(metric.percentile);
       const col = categoryColor(metric.category);
       console.log(`  ${label.padEnd(36)} ${value} — ${col}${categoryLabel(metric.category)}${c.reset}`);
     }
