@@ -1,0 +1,12 @@
+{
+  "name": "web-vitals-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to check Core Web Vitals for any URL",
+  "type": "module",
+  "bin": {
+    "web-vitals": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
