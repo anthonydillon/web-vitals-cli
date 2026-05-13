@@ -1,6 +1,18 @@
-# web-vitals-cli
+# web-vitals-checker
 
 A zero-dependency Node.js CLI that checks [Core Web Vitals](https://web.dev/vitals/) for any URL or sitemap using the [Google PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started). Results are persisted locally so you can track scores over time and view trends in a local web dashboard.
+
+## Installation
+
+```bash
+npm install -g web-vitals-checker
+```
+
+Or run without installing:
+
+```bash
+npx web-vitals-checker https://example.com
+```
 
 ## Requirements
 
@@ -17,10 +29,8 @@ A zero-dependency Node.js CLI that checks [Core Web Vitals](https://web.dev/vita
 export PSI_API_KEY=your-key-here
 
 # Or pass it per-run
-node index.js https://example.com --key your-key-here
+web-vitals https://example.com --key your-key-here
 ```
-
-No `npm install` is needed — the project has zero runtime dependencies.
 
 ---
 
@@ -29,7 +39,7 @@ No `npm install` is needed — the project has zero runtime dependencies.
 ### Analyse a single page
 
 ```bash
-node index.js https://example.com
+web-vitals https://example.com
 ```
 
 Prints lab data (Lighthouse) and field data (CrUX real-user metrics) for the URL, followed by a score history trend if the URL has been checked before.
@@ -39,7 +49,7 @@ Prints lab data (Lighthouse) and field data (CrUX real-user metrics) for the URL
 URLs ending in `.xml` or containing `sitemap` in the path are auto-detected as sitemaps. Sitemap index files (nested sitemaps) are resolved recursively.
 
 ```bash
-node index.js https://example.com/sitemap.xml
+web-vitals https://example.com/sitemap.xml
 ```
 
 Outputs a sorted table of every checked page with Score, Δ (change since last run), LCP, CLS, TBT, run count, and URL — plus Top Performers and Needs Attention sections.
@@ -47,9 +57,9 @@ Outputs a sorted table of every checked page with Score, Δ (change since last r
 ### View history in the terminal
 
 ```bash
-node index.js history            # all strategies
-node index.js history --mobile   # mobile only
-node index.js history --desktop  # desktop only
+web-vitals history            # all strategies
+web-vitals history --mobile   # mobile only
+web-vitals history --desktop  # desktop only
 ```
 
 Shows a compact table of every tracked URL with its latest score, delta from the previous run, a sparkline of the last 10 runs, and run count.
@@ -57,8 +67,8 @@ Shows a compact table of every tracked URL with its latest score, delta from the
 ### Open the web dashboard
 
 ```bash
-node index.js serve              # http://localhost:3000
-node index.js serve --port 8080
+web-vitals serve              # http://localhost:3000
+web-vitals serve --port 8080
 ```
 
 A Vanilla Framework dashboard that reads the history file on every request and auto-refreshes every 60 seconds. Run scans in a separate terminal and refresh the browser to see results update live.

@@ -1,12 +1,42 @@
 {
-  "name": "web-vitals-cli",
+  "name": "web-vitals-checker",
   "version": "1.0.0",
-  "description": "CLI tool to check Core Web Vitals for any URL",
+  "description": "CLI to audit Core Web Vitals for any URL or sitemap, with history tracking and a local Vanilla Framework dashboard",
   "type": "module",
   "bin": {
     "web-vitals": "./index.js"
   },
+  "files": [
+    "index.js",
+    "server.js"
+  ],
+  "keywords": [
+    "web-vitals",
+    "core-web-vitals",
+    "lighthouse",
+    "pagespeed",
+    "performance",
+    "lcp",
+    "cls",
+    "tbt",
+    "cli",
+    "sitemap",
+    "dashboard"
+  ],
+  "author": "Anthony Dillon <anthony.dillon@canonical.com>",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anthonydillon/web-vitals-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anthonydillon/web-vitals-cli/issues"
+  },
+  "homepage": "https://github.com/anthonydillon/web-vitals-cli#readme",
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "prepublishOnly": "node --check index.js && node --check server.js"
   }
 }
